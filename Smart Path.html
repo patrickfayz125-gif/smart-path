@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Path | جامعة حلوان التكنولوجية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+:root {
+    --neon-blue: #00d2ff;
+    --deep-blue: #0045ff;
+    --dark-bg: #020617;
+    --card-bg: rgba(15, 23, 42, 0.8);
+    --border: rgba(255, 255, 255, 0.1);
+    --error-red: #ff4d4d;
+}
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Cairo', sans-serif; }
+body {
+    background: var(--dark-bg);
+    color: #f8fafc;
+    overflow-x:hidden;
+    scroll-behavior:smooth;
+    min-height: 100vh;
+}
+
+/* تأثير الـ Fade المضاف للانتقال بين الأسئلة */
+.fade-out { opacity: 0; transform: translateY(-10px); transition: 0.3s; }
+.fade-in { opacity: 1; transform: translateY(0); transition: 0.3s; }
+
+/* الخلفية التكنولوجية المتقدمة */
+.tech-bg {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -2;
+    background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+}
+
+.grid-bg {
+    position: fixed;
+    inset:0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index:-1;
+    opacity:0.15;
+    animation: gridMove 20s linear infinite;
+}
+
+.glow-orb {
+    position: fixed;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0, 210, 255, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+    animation: orbMove 15s infinite alternate;
+}
+
+@keyframes orbMove {
+    0% { transform: translate(-10%, -10%); }
+    100% { transform: translate(100%, 50%); }
+}
+
+@keyframes gridMove { 0%{background-position:0 0,0 0;} 100%{background-position:500px 500px,500px 500px;} }
+
+nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 15px 0; border-bottom: 1px solid var(--border);
+}
+.nav-flex { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+
+.container { max-width:1200px; margin:0 auto; padding:20px; }
+@keyframes fadeInUp { from {opacity:0; transform:translateY(30px);} to {opacity:1; transform:translateY(0);} }
+.animate { animation: fadeInUp 0.8s ease forwards; }
+
+header { text-align:center; padding:60px 0; }
+header h1 {
+    font-size: clamp(2rem,5vw,3.5rem);
+    font-weight:900;
+    background: linear-gradient(to right,#fff,var(--neon-blue));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    text-shadow: 0 0 15px rgba(0,210,255,0.5);
+}
+header p { color: var(--neon-blue); letter-spacing:1px; font-weight:bold; margin-top:10px; }
+
+.history-section { display:flex; flex-wrap:wrap; gap:30px; margin-bottom:60px; align-items:center; }
+.history-text { flex:1; min-width:300px; }
+.history-img { flex:1; min-width:300px; border-radius:20px; overflow:hidden; border:2px solid var(--neon-blue); box-shadow:0 0 30px rgba(0,210,255,0.3); }
+.history-img img { width:100%; height:100%; object-fit:cover; transition: 0.5s; }
+
+.majors-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:25px; margin-bottom:60px; }
+.major-card { background: var(--card-bg); border-radius:20px; overflow:hidden; border:1px solid var(--border); transition:.4s; cursor:pointer; position:relative; backdrop-filter: blur(5px); }
+.major-card:hover { border-color: var(--neon-blue); transform: translateY(-10px); box-shadow:0 10px 30px rgba(0,210,255,0.2); }
+
+.img-container { width:100%; height:200px; background:#1e293b; position:relative; display:flex; align-items:center; justify-content:center; }
+.img-container i { position:absolute; font-size:3.5rem; color: var(--neon-blue); opacity:0.2; }
+.img-container img { width:100%; height:100%; object-fit:cover; position:relative; z-index:1; }
+.major-card-content { padding:20px; text-align:center; }
+.major-card-content h3 { font-size:1.2rem; margin-bottom:5px; color: #fff; }
+.major-card-content p { font-size:0.9rem; color: var(--neon-blue); }
+
+.progress-container { width: 100%; height: 8px; background: #1e293b; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--deep-blue), var(--neon-blue)); width: 0%; transition: 0.4s; }
+
+.modal { position: fixed; inset:0; background: rgba(0,0,0,0.9); z-index:1000; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter: blur(12px);}
+.modal-content { background: var(--card-bg); border:2px solid var(--neon-blue); border-radius:30px; max-width:700px; width:100%; padding:40px; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 0 40px rgba(0,210,255,0.4);}
+.close-modal { position:absolute; top:20px; left:20px; color:white; font-size:2rem; cursor:pointer; }
+
+.card { background: var(--card-bg); border:1px solid var(--border); border-radius:24px; padding:40px; margin:0 auto; box-shadow:0 0 20px rgba(0,0,0,0.3); backdrop-filter: blur(10px); position: relative; }
+.input-group { margin-bottom:20px; }
+.input-group label { display:block; margin-bottom:8px; font-weight:bold; color: var(--neon-blue); }
+input, select { width:100%; padding:15px; border-radius:12px; border:1px solid var(--border); background:#020617; color:white; font-size:1rem; outline: none; transition: 0.3s; }
+input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,210,255,0.2); }
+input.error { border-color: var(--error-red); }
+
+.validation-msg { color: var(--error-red); font-size: 0.85rem; margin-top: 5px; display: none; font-weight: bold; }
+
+.btn-tech { width:100%; padding:18px; border-radius:15px; background: linear-gradient(45deg,var(--deep-blue),var(--neon-blue)); color:white; border:none; font-weight:900; cursor:pointer; transition:.3s; font-size:1.1rem; margin-top:10px; }
+.btn-tech:hover { box-shadow:0 0 40px var(--deep-blue); transform: translateY(-2px); }
+.btn-nav { width: auto; padding: 10px 25px; margin: 0; font-size: 0.9rem; }
+
+.screen { display:none; }
+.screen.active { display:block; animation: fadeInUp 0.6s ease; }
+.lang-flex { display:flex; justify-content:space-between; gap:20px; text-align:center; margin-top:10px; }
+.lang-box { flex:1; padding:10px; border-left:1px solid var(--border); }
+.lang-box:last-child { border-left:none; }
+
+.option { transition:0.2s; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; }
+.option:hover { background:rgba(0,210,255,0.2); transform:translateY(-2px);}
+
+.welcome-msg { text-align:center; font-size:1.3rem; font-weight:900; margin-bottom:15px; color:#00d2ff; text-shadow: 0 0 10px #00d2ff; }
+
+.winner-img-final { 
+    width: 100%; 
+    max-width: 300px; 
+    border-radius: 15px; 
+    margin: 15px auto; 
+    border: 2px solid var(--neon-blue); 
+    box-shadow: 0 0 20px rgba(0,210,255,0.2);
+}
+
+#resourceLinks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; justify-content: center; }
+.resource-badge { background: rgba(0,210,255,0.1); padding: 8px 15px; border-radius: 8px; color: var(--neon-blue); text-decoration: none; font-size: 0.85rem; border: 1px solid var(--neon-blue); transition: 0.3s; }
+.resource-badge:hover { background: var(--neon-blue); color: #000; }
+
+#chartWrapper { width: 100%; max-width: 500px; height: 350px; margin: 30px auto; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 20px; position: relative; }
+#qrcode { display: flex; justify-content: center; margin-top: 20px; padding: 10px; background: white; width: fit-content; margin-inline: auto; border-radius: 10px; display: none; }
+
+/* Improved Print Canvas Styling */
+#chartImageForPrint { display: none; width: 100%; max-width: 500px; margin: 0 auto; }
+
+footer { padding: 40px 20px; text-align: center; border-top: 1px solid var(--border); margin-top: 60px; }
+.social-links { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
+.social-links a { color: var(--neon-blue); font-size: 1.5rem; transition: 0.3s; }
+.social-links a:hover { transform: scale(1.2); color: #fff; }
+
+@media print {
+    .btn-tech, .grid-bg, .tech-bg, .glow-orb, header, .history-section, .majors-grid, nav, footer { display: none !important; }
+    body { background: white !important; color: black !important; }
+    .card { border: 2px solid #000 !important; box-shadow: none !important; color: black !important; background: white !important; padding: 20px !important; }
+    #chartWrapper canvas { display: none !important; }
+    #chartImageForPrint { display: block !important; }
+    #qrcode { display: block !important; }
+}
+</style>
+</head>
+<body>
+<div class="tech-bg"></div>
+<div class="grid-bg"></div>
+<div class="glow-orb"></div>
+
+<nav>
+    <div class="nav-flex">
+        <div style="font-weight: 900; color: var(--neon-blue); font-size: 1.2rem;">HTU Smart Path</div>
+        <button class="btn-tech btn-nav" onclick="scrollToStart()">ابدأ الرحلة | Start Journey</button>
+    </div>
+</nav>
+
+<div class="container">
+<header class="animate">
+<h1>جامعة حلوان التكنولوجية</h1>
+<p>Helwan Technological University</p>
+<p>مستقبلك يبدأ من هنا .. حدد مسارك الذكي | Your future starts here.. Define your smart path</p>
+</header>
+
+<section id="startScreen" class="screen active">
+<div class="history-section animate">
+<div class="history-text">
+<h2 style="color: var(--neon-blue); margin-bottom:15px;">نبذة تاريخية | Brief History</h2>
+<p style="line-height:1.8; margin-bottom:15px;">تعتبر جامعة حلوان التكنولوجية بالأميرية صرحاً تعليمياً حديثاً يهدف إلى إحداث نقلة نوعية في التعليم الفني والتطبيقي في مصر. تركز الجامعة على ربط الخريجين بسوق العمل الفعلي من خلال برامج متطورة تحاكي الثورة الصناعية الرابعة.</p>
+<p style="line-height:1.8; font-style:italic; color:#cbd5e1; border-right: 3px solid var(--neon-blue); padding-right: 15px;">
+    Helwan Technological University in Al-Amireya is a modern educational landmark aiming to create a qualitative leap in technical and applied education in Egypt.
+</p>
+</div>
+<div class="history-img">
+    <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=800" 
+         srcset="https://images.unsplash.com/photo-1562774053-701939374585?w=400 400w, https://images.unsplash.com/photo-1562774053-701939374585?w=800 800w"
+         sizes="(max-width: 600px) 400px, 800px"
+         alt="University Campus" loading="lazy">
+</div>
+</div>
+
+<h2 style="text-align:center; margin-bottom:40px;">استكشف تخصصاتنا | Explore Our Majors</h2>
+<div class="majors-grid" id="majorsDisplay"></div>
+
+<div class="card animate" id="studentForm" style="max-width:600px;">
+<div class="welcome-msg">Welcome to your Smart Path</div>
+<h3 style="text-align:center; margin-bottom:30px;">بيانات الطالب | Student Info</h3>
+
+<div id="errorAlert" class="validation-msg" style="text-align:center; margin-bottom:15px; border:1px solid var(--error-red); padding:10px; border-radius:10px;">
+    يرجى ملء جميع الحقول المطلوبة للمتابعة | Please fill all fields to continue
+</div>
+
+<div class="input-group">
+<label>الاسم الكامل | Full Name</label>
+<input type="text" id="userName" placeholder="ادخل اسمك / Enter Name">
+</div>
+<div class="input-group" style="display:flex; gap:20px;">
+<div style="flex:1;">
+<label>السن | Age</label>
+<input type="number" id="userAge" placeholder="السن / Age">
+</div>
+<div style="flex:1;">
+<label>الجنس | Gender</label>
+<select id="userGender">
+<option value="">اختر / Select</option>
+<option value="male">ذكر / Male</option>
+<option value="female">أنثى / Female</option>
+</select>
+</div>
+</div>
+<button class="btn-tech" id="mainStartBtn" onclick="startQuiz()">ابدأ رحلة تحديد المسار (35 سؤال) <br>Start Smart Path Journey (35 Qs)</button>
+</div>
+</section>
+
+<section id="quizScreen" class="screen">
+<div class="card" id="qCardBody">
+    <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
+<h3 id="qCounter" style="color: var(--neon-blue); text-align:center;"></h3>
+<div class="lang-flex">
+<div class="lang-box"><h2 id="qTextAr"></h2></div>
+<div class="lang-box"><h2 id="qTextEn" style="font-style:italic; color:#cbd5e1;"></h2></div>
+</div>
+<div id="optionsList" style="margin-top:30px;"></div>
+</div>
+</section>
+
+<section id="resultScreen" class="screen">
+<div class="card" id="printArea" style="text-align:center;">
+<div style="background: var(--neon-blue); color:#020617; display:inline-block; padding:5px 20px; border-radius:50px; font-weight:900; margin-bottom:20px;">التقرير النهائي | Career Analysis Report</div>
+<h2 id="studentNameDisplay" style="margin-bottom:10px;"></h2>
+<p id="studentMetaDisplay" style="margin-bottom:20px; color:var(--neon-blue);"></p>
+
+<div id="winnerMajorSection" style="margin-bottom:30px;"></div>
+
+<div id="chartWrapper">
+    <canvas id="resultChart"></canvas>
+    <img id="chartImageForPrint" src="" alt="Result Chart">
+</div>
+
+<div id="resList"></div>
+
+<div id="roadmapBox" style="text-align:right; background:rgba(0,210,255,0.05); padding:20px; border-radius:15px; margin-top:20px; border:1px solid var(--neon-blue);">
+    <h4 style="color:var(--neon-blue); margin-bottom: 10px;"><i class="fas fa-map-marked-alt"></i> خارطة الطريق | Learning Roadmap:</h4>
+    <p id="roadmapTextAr" style="line-height: 1.6; font-weight: bold;"></p>
+    <p id="roadmapTextEn" style="line-height: 1.6; font-style: italic; color: #cbd5e1; margin-top: 5px;"></p>
+    <div id="resourceLinks"></div>
+</div>
+
+<div id="qrcode"></div>
+<button class="btn-tech" style="background: #10b981; margin-top:20px;" onclick="window.print()"><i class="fas fa-file-pdf"></i> حفظ النتيجة PDF / Print Report</button>
+<button class="btn-tech" onclick="restartTest()">إعادة الاختبار | Restart Test</button>
+</div>
+</section>
+
+<div id="majorModal" class="modal">
+<div class="modal-content">
+<span class="close-modal" onclick="closeModal()">&times;</span>
+<div id="modalData"></div>
+</div>
+</div>
+
+<footer>
+    <p>© 2025 جميع الحقوق محفوظة | جامعة حلوان التكنولوجية</p>
+    <div class="social-links">
+        <a href="#"><i class="fab fa-facebook"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+        <a href="#"><i class="fab fa-github"></i></a>
+        <a href="#"><i class="fas fa-globe"></i></a>
+    </div>
+</footer>
+
+</div>
+
+<script>
+// --- [1] Firebase Configuration ---
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_ID",
+    appId: "YOUR_APP_ID"
+};
+
+let db = null;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+} catch(e) { console.log("Firebase not connected."); }
+
+// --- [2] Data & Weights ---
+const majorData = {
+    ai: {
+        titleAr:"الذكاء الاصطناعي",titleEn:"Artificial Intelligence",icon:"fa-brain",img:"https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600",
+        skillsAr:"برمجة Python، تعلم الآلة، تحليل البيانات الضخمة.",
+        skillsEn:"Python Programming, Machine Learning, Big Data.",
+        jobsAr:"مهندس ذكاء اصطناعي، مطور خوارزميات، عالم بيانات.",
+        jobsEn:"AI Engineer, Algorithms Developer, Data Scientist.",
+        roadAr:"ابدأ بتعلم لغة Python والرياضيات المتقدمة.",
+        roadEn:"Start with Python and advanced math basics.",
+        links: [{n:"Python for AI", u:"https://www.coursera.org/learn/python-for-applied-data-science-ai"}]
+    },
+    data: {
+        titleAr:"علم البيانات",titleEn:"Data Science",icon:"fa-database",img:"https://images.unsplash.com/photo-1551288049-bbda38a5f9a5?w=600",
+        skillsAr:"الإحصاء، إدارة قواعد البيانات، تحليل البيانات.",
+        skillsEn:"Statistics, Database Management, Data Analysis.",
+        jobsAr:"محلل بيانات، باحث إحصائي.",
+        jobsEn:"Data Analyst, Statistical Researcher.",
+        roadAr:"ركز على قواعد البيانات SQL وأدوات التصور مثل Power BI.",
+        roadEn:"Focus on SQL databases and visualization tools like Power BI.",
+        links: [{n:"SQL Mastery", u:"https://www.khanacademy.org/computing/computer-programming/sql"}]
+    },
+    cyber: {
+        titleAr:"الأمن السيبراني",titleEn:"Cyber Security",icon:"fa-shield-alt",img:"https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600",
+        skillsAr:"حماية الشبكات، التشفير، اختبار الاختراق.",
+        skillsEn:"Network Protection, Encryption, Penetration Testing.",
+        jobsAr:"خبير أمن معلومات، محلل ثغرات.",
+        jobsEn:"Cybersecurity Expert, Vulnerability Analyst.",
+        roadAr:"تعلم أساسيات شبكات الحاسوب (Network+) ثم Linux.",
+        roadEn:"Learn Networking basics (Network+), then Linux systems.",
+        links: [{n:"TryHackMe", u:"https://tryhackme.com/"}]
+    },
+    mecha: {
+        titleAr:"ميكاترونكس و أوتوترونيكس",titleEn:"Mechatronics & Autotronics",icon:"fa-robot",img:"https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600",
+        skillsAr:"التحكم الآلي، برمجة الأنظمة المدمجة.",
+        skillsEn:"Auto Control, Embedded Systems.",
+        jobsAr:"مهندس روبوتات، مهندس أنظمة تحكم.",
+        jobsEn:"Robotics Engineer, Control Systems Engineer.",
+        roadAr:"تدرب على برمجة المتحكمات مثل Arduino.",
+        roadEn:"Practice Micro-controller programming like Arduino.",
+        links: [{n:"Arduino Basics", u:"https://www.arduino.cc/en/Tutorial/HomePage"}]
+    },
+    textile: {
+        titleAr:"الملابس الجاهزة",titleEn:"Ready-made Garments",icon:"fa-shirt",img:"https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?w=600",
+        skillsAr:"تصميم أزياء، إدارة إنتاج النسيج، مراقبة الجودة.",
+        skillsEn:"Fashion Design, Production Management, Quality Control.",
+        jobsAr:"مصمم أزياء، مدير إنتاج نسيج.",
+        jobsEn:"Fashion Designer, Production Manager.",
+        roadAr:"تعرف على تكنولوجيا الأقمشة الحديثة وبرامج التصميم.",
+        roadEn:"Study modern fabric technology and CAD design software.",
+        links: [{n:"CLO 3D Tutorial", u:"https://www.clo3d.com/en/clo/training"}]
+    }
+};
+
+// تم إضافة أوزان متغيرة (Weight) للأسئلة لزيادة دقة النتائج
+const questionsData = [
+    {qAr:"هل تستهويك فكرة بناء برامج تتخذ قراراتها بنفسها؟", qEn:"Does building self-deciding software fascinate you?", w:{ai:10}},
+    {qAr:"هل تفضل فك وتجميع الأجزاء الميكانيكية المعقدة؟", qEn:"Do you prefer assembling complex mechanical parts?", w:{mecha:10}},
+    {qAr:"هل أنت مهتم بتأمين الشبكات من الهجمات الرقمية؟", qEn:"Are you interested in securing networks from cyber attacks?", w:{cyber:10}},
+    {qAr:"هل تحب البحث عن أنماط معينة وسط جداول بيانات ضخمة؟", qEn:"Do you like finding patterns in huge data tables?", w:{data:10}},
+    {qAr:"هل تنجذب لتصميم الملابس واستخدام أنواع أقمشة مبتكرة؟", qEn:"Are you attracted to fashion design and innovative fabrics?", w:{textile:10}},
+    {qAr:"هل تفضل لغات البرمجة والتعامل مع الكود لساعات؟", qEn:"Do you prefer programming and coding for hours?", w:{ai:5, cyber:5, data:4}},
+    {qAr:"هل تستهويك صناعة الروبوتات والتحكم في حركتها؟", qEn:"Are you interested in robotics and motion control?", w:{mecha:8, ai:4}},
+    {qAr:"هل تهتم بمعالجة الصور وتصنيفها آلياً؟", qEn:"Are you interested in automated image processing?", w:{ai:10}},
+    {qAr:"هل تستمتع بتحليل الثغرات الأمنية في التطبيقات؟", qEn:"Do you enjoy analyzing security vulnerabilities in apps?", w:{cyber:10}},
+    {qAr:"هل تجد متعة في تحويل الأرقام الجافة إلى رسوم بيانية؟", qEn:"Do you enjoy turning raw numbers into charts?", w:{data:10}},
+    {qAr:"هل تهتم بكيفية عمل خطوط الإنتاج الضخمة في المصانع؟", qEn:"Are you interested in how factory production lines work?", w:{textile:6, mecha:6}},
+    {qAr:"هل تود تعلم كيفية حماية الخصوصية الرقمية للمستخدمين؟", qEn:"Do you want to learn how to protect digital privacy?", w:{cyber:10}},
+    {qAr:"هل تفضل التعامل مع المحركات الكهربائية والتروس؟", qEn:"Do you prefer dealing with electric motors and gears?", w:{mecha:10}},
+    {qAr:"هل تتابع أحدث صيحات تكنولوجيا المنسوجات الذكية؟", qEn:"Do you follow the latest smart textile technology trends?", w:{textile:10}},
+    {qAr:"هل تحب التنبؤ بالمستقبل بناءً على إحصائيات سابقة؟", qEn:"Do you like predicting the future based on past stats?", w:{data:8, ai:8}},
+    {qAr:"هل تفضل حل المشكلات المنطقية والرياضيات؟", qEn:"Do you prefer solving logic problems and math?", w:{ai:10, data:6}},
+    {qAr:"هل تنجذب لفكرة العمل كـ 'هكر أخلاقي'؟", qEn:"Are you attracted to being an 'ethical hacker'?", w:{cyber:10}},
+    {qAr:"هل تحب الرسم والتصميم الفني للمنتجات؟", qEn:"Do you like drawing and artistic product design?", w:{textile:8}},
+    {qAr:"هل يثير اهتمامك كيفية عمل السيارات ذاتية القيادة؟", qEn:"Are you interested in how self-driving cars work?", w:{ai:8, mecha:8}},
+    {qAr:"هل تهتم ببرمجة المواقع وتأمين قواعد بياناتها؟", qEn:"Are you interested in web programming and database security?", w:{cyber:6, data:6}},
+    {qAr:"هل تفضل الأعمال التي تتطلب دقة يدوية عالية؟", qEn:"Do you prefer tasks requiring high manual precision?", w:{mecha:6, textile:6}},
+    {qAr:"هل تحب تنظيم الملفات والمعلومات بشكل منهجي؟", qEn:"Do you like organizing information systematically?", w:{data:10}},
+    {qAr:"هل تود تعلم كيفية بناء خوارزمية للدردشة الآلية؟", qEn:"Do you want to learn how to build a chatbot algorithm?", w:{ai:10}},
+    {qAr:"هل تستهويك فكرة صيانة الأجهزة الطبية المتطورة؟", qEn:"Are you interested in maintaining advanced medical devices?", w:{mecha:8}},
+    {qAr:"هل تتابع أخبار تسريب البيانات والحروب السيبرانية؟", qEn:"Do you follow data leak and cyber warfare news?", w:{cyber:10}},
+    {qAr:"هل تجد نفسك مبدعاً في اختيار وتنسيق الألوان؟", qEn:"Do you find yourself creative in color coordination?", w:{textile:10}},
+    {qAr:"هل تحب تجربة أدوات الذكاء الاصطناعي مثل ChatGPT؟", qEn:"Do you like trying AI tools like ChatGPT?", w:{ai:10}},
+    {qAr:"هل تهتم بكيفية تخزين السحب الإلكترونية للبيانات؟", qEn:"Are you interested in how clouds store data?", w:{data:6, cyber:6}},
+    {qAr:"هل تود تصميم ملابس رياضية بمواصفات تقنية؟", qEn:"Do you want to design technical sportswear?", w:{textile:10}},
+    {qAr:"هل تستهويك أنظمة التحكم الآلي في المصاعد؟", qEn:"Are you interested in elevator control systems?", w:{mecha:10}},
+    {qAr:"هل أنت صبور في تتبع الأخطاء البرمجية (Debugging)؟", qEn:"Are you patient in debugging code?", w:{ai:8, cyber:8}},
+    {qAr:"هل تود إدارة قواعد بيانات ضخمة لشركة عالمية؟", qEn:"Do you want to manage big databases for a global firm?", w:{data:10}},
+    {qAr:"هل تحب بناء نماذج مصغرة للمشاريع الهندسية؟", qEn:"Do you like building scale models of engineering projects?", w:{mecha:8}},
+    {qAr:"هل تود حماية الأنظمة البنكية من الاحتيال؟", qEn:"Do you want to protect banking systems from fraud?", w:{cyber:10, data:4}},
+    {qAr:"هل يثير اهتمامك تأثير الذكاء الاصطناعي على الوظائف؟", qEn:"Are you interested in AI's impact on jobs?", w:{ai:10}}
+];
+
+let currentQ = 0;
+let scores = {ai:0,data:0,cyber:0,mecha:0,textile:0};
+let myChart = null;
+
+window.onload = ()=>{
+    // محاولة استعادة الحالة المحفوظة (حفظ حالة الاختبار)
+    const savedProgress = sessionStorage.getItem('htu_progress');
+    const savedScores = sessionStorage.getItem('htu_scores');
+    const savedName = sessionStorage.getItem('htu_name');
+
+    if(savedProgress && savedScores && savedName) {
+        document.getElementById('mainStartBtn').innerHTML = "استكمال الاختبار المحفوظ | Resume Quiz";
+    }
+
+    const grid = document.getElementById('majorsDisplay');
+    Object.keys(majorData).forEach(key=>{
+        const m = majorData[key];
+        grid.innerHTML += `<div class="major-card animate" onclick="openMajor('${key}')">
+            <div class="img-container"><i class="fas ${m.icon}"></i><img src="${m.img}" loading="lazy" alt="${m.titleAr}"></div>
+            <div class="major-card-content"><h3>${m.titleAr}</h3><p>${m.titleEn}</p></div></div>`;
+    });
+};
+
+function scrollToStart() {
+    document.getElementById('studentForm').scrollIntoView({behavior: 'smooth'});
+}
+
+function openMajor(key){
+    const m = majorData[key];
+    document.getElementById('modalData').innerHTML = `<div style="text-align:center; margin-bottom:20px;">
+        <h2 style="color:var(--neon-blue);">${m.titleAr} | ${m.titleEn}</h2></div>
+        <div class="lang-flex">
+            <div class="lang-box"><h4 style="color:var(--neon-blue);">المهارات المطلوبة:</h4><p>${m.skillsAr}</p></div>
+            <div class="lang-box"><h4 style="color:var(--neon-blue);">Required Skills:</h4><p>${m.skillsEn}</p></div></div>`;
+    document.getElementById('majorModal').style.display='flex';
+}
+function closeModal(){document.getElementById('majorModal').style.display='none';}
+
+function startQuiz(){
+    const uName = document.getElementById('userName');
+    const uAge = document.getElementById('userAge');
+    const uGender = document.getElementById('userGender');
+    const errorAlert = document.getElementById('errorAlert');
+
+    // استعادة البيانات لو كانت مخزنة
+    const savedProgress = sessionStorage.getItem('htu_progress');
+    if(savedProgress && !uName.value) {
+        currentQ = parseInt(savedProgress);
+        scores = JSON.parse(sessionStorage.getItem('htu_scores'));
+        document.getElementById('userName').value = sessionStorage.getItem('htu_name');
+        document.getElementById('userAge').value = sessionStorage.getItem('htu_age');
+        document.getElementById('userGender').value = sessionStorage.getItem('htu_gender');
+    }
+
+    if(!uName.value || !uAge.value || !uGender.value){
+        errorAlert.style.display = 'block';
+        uName.classList.add('error');
+        window.scrollTo(0, uName.offsetTop - 100);
+        return;
+    }
+    
+    errorAlert.style.display = 'none';
+    document.getElementById('startScreen').classList.remove('active');
+    document.getElementById('quizScreen').classList.add('active');
+    window.scrollTo(0,0);
+    showQuestion();
+}
+
+function showQuestion(){
+    if(currentQ >= questionsData.length){showResult(); return;}
+    
+    // تأثير الـ Fade عند تغيير السؤال
+    const qCard = document.getElementById('qCardBody');
+    qCard.classList.remove('fade-in');
+    qCard.classList.add('fade-out');
+
+    setTimeout(() => {
+        const q = questionsData[currentQ];
+        document.getElementById('progressBar').style.width = (currentQ / 35 * 100) + '%';
+        document.getElementById('qCounter').innerText=`السؤال ${currentQ+1} من 35`;
+        document.getElementById('qTextAr').innerText=q.qAr;
+        document.getElementById('qTextEn').innerText=q.qEn;
+        
+        const list = document.getElementById('optionsList');
+        list.innerHTML = '';
+
+        // تعريب الإجابات وجعلها ثنائية اللغة
+        const options = [
+            {ar:"موافق بشدة", en:"Strongly Agree", val:1},
+            {ar:"إلى حد ما", en:"Somewhat", val:0.5},
+            {ar:"لا أوافق", en:"Disagree", val:0}
+        ];
+
+        options.forEach(opt=>{
+            const btn = document.createElement('button');
+            btn.className='btn-tech option';
+            btn.innerHTML=`${opt.ar} <br> <span style="font-size:0.8rem; font-weight:normal; opacity:0.7;">${opt.en}</span>`;
+            btn.onclick=()=> {
+                Object.keys(q.w).forEach(k => scores[k] += q.w[k] * opt.val);
+                currentQ++;
+                
+                // حفظ الحالة في sessionStorage
+                sessionStorage.setItem('htu_progress', currentQ);
+                sessionStorage.setItem('htu_scores', JSON.stringify(scores));
+                sessionStorage.setItem('htu_name', document.getElementById('userName').value);
+                sessionStorage.setItem('htu_age', document.getElementById('userAge').value);
+                sessionStorage.setItem('htu_gender', document.getElementById('userGender').value);
+
+                showQuestion();
+            };
+            list.appendChild(btn);
+        });
+
+        qCard.classList.remove('fade-out');
+        qCard.classList.add('fade-in');
+    }, 300);
+}
+
+function showResult(){
+    // مسح الحالة المحفوظة عند الانتهاء
+    sessionStorage.clear();
+
+    document.getElementById('quizScreen').classList.remove('active');
+    document.getElementById('resultScreen').classList.add('active');
+    window.scrollTo(0,0);
+    
+    const uName = document.getElementById('userName').value;
+    document.getElementById('studentNameDisplay').innerText = "الاسم: " + uName;
+    
+    let sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+    const topKey = sorted[0][0];
+    const topMajor = majorData[topKey];
+
+    document.getElementById('winnerMajorSection').innerHTML = `
+        <h3>تخصصك المقترح: ${topMajor.titleAr}</h3>
+        <img src="${topMajor.img}" class="winner-img-final" alt="${topMajor.titleAr}">
+    `;
+    
+    document.getElementById('roadmapTextAr').innerText = topMajor.roadAr;
+    document.getElementById('roadmapTextEn').innerText = topMajor.roadEn;
+    
+    const linksDiv = document.getElementById('resourceLinks');
+    linksDiv.innerHTML = '';
+    topMajor.links.forEach(link => {
+        linksDiv.innerHTML += `<a href="${link.u}" target="_blank" class="resource-badge"><i class="fas fa-external-link-alt"></i> ${link.n}</a>`;
+    });
+    
+    saveResultToDatabase(uName, topMajor.titleAr);
+
+    setTimeout(() => {
+        const ctx = document.getElementById('resultChart').getContext('2d');
+        if(myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: Object.values(majorData).map(m => m.titleAr),
+                datasets: [{
+                    label: 'تحليل الميول التقنية',
+                    data: Object.keys(majorData).map(k => scores[k]),
+                    backgroundColor: 'rgba(0, 210, 255, 0.3)',
+                    borderColor: '#00d2ff',
+                    pointBackgroundColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        angleLines: { color: 'rgba(255,255,255,0.1)' },
+                        pointLabels: { color: '#fff', font: { size: 12 } },
+                        ticks: { display: false },
+                        suggestedMin: 0
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }, 100);
+
+    new QRCode(document.getElementById("qrcode"), { text: "HTU-VERIFIED-" + uName, width: 128, height: 128 });
+    document.getElementById("qrcode").style.display = "block";
+}
+
+function saveResultToDatabase(name, major) {
+    const data = { 
+        name: name, 
+        major: major, 
+        age: document.getElementById('userAge').value,
+        gender: document.getElementById('userGender').value,
+        date: new Date().toLocaleString() 
+    };
+    
+    if(db) {
+        db.ref('results/').push(data);
+    }
+    
+    let history = JSON.parse(localStorage.getItem('htu_results')) || [];
+    history.push(data);
+    localStorage.setItem('htu_results', JSON.stringify(history));
+}
+
+window.onbeforeprint = () => {
+    if(myChart) {
+        const base64Image = myChart.toBase64Image();
+        document.getElementById('chartImageForPrint').src = base64Image;
+    }
+};
+
+function restartTest() { 
+    sessionStorage.clear();
+    location.reload(); 
+}
+</script>
+</body>
+</html>
